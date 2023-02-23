@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
 });
 // hendel post request from form and subscribe audience
 
-app.post("/", (req, res) => {
+app.post("/", async (req, res) => {
   const fName = req.body.firstName;
   const lName = req.body.lastName;
   const emails = req.body.email;
@@ -30,28 +30,23 @@ app.post("/", (req, res) => {
     apiKey: process.env.MAILCHIMP_API_KEY,
     server: "us10",
   });
-  async function run() {
-    const response = await mailchimp.lists
-      .addListMember(listId, {
-        email_address: subscribingUser.email,
-        status: "subscribed",
-        merge_fields: {
-          FNAME: subscribingUser.firstName,
-          LNAME: subscribingUser.lastName,
-        },
-      })
-      .then(
-        (value) => {
-          console.log("Succssesfully added contact");
-          res.sendFile(__dirname + "/public/success.html");
-        },
-        (reason) => {
-          res.sendFile(__dirname + "/public/failure.html");
-        }
-      );
-  }
+  const body = {
+    email_address: subscribingUser.email,
+    status: "subscribed",
+    merge_fields: {
+      FNAME: subscribingUser.firstName,
+      LNAME: subscribingUser.lastName,
+    },
+  };
+  try {
+    const response = await mailchimp.lists.addListMember(listId, body);
 
-  run();
+    res.sendFile(__dirname + "/public/success.html");
+    console.log("Successfuly added new subscriber");
+  } catch (error) {
+    console.error(error);
+    res.sendFile(__dirname + "/public/failure.html");
+  }
 });
 
 // spin the server
